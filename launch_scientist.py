@@ -363,19 +363,19 @@ if __name__ == "__main__":
     else:
         for idea in novel_ideas:
             print(f"Processing idea: {idea['Name']}")
-            try:
-                success = do_idea(
-                    base_dir,
-                    results_dir,
-                    idea,
-                    args.model,
-                    client,
-                    client_model,
-                    args.writeup,
-                    args.improvement,
-                )
-                print(f"Completed idea: {idea['Name']}, Success: {success}")
-            except Exception as e:
-                print(f"Failed to evaluate idea {idea['Name']}: {str(e)}")
+            # try:
+            success = do_idea(
+                base_dir,
+                results_dir,
+                idea,
+                args.model,
+                client,
+                client_model,
+                args.writeup,
+                args.improvement,
+            )
+            print(f"Completed idea: {idea['Name']}, Success: {success}")
+            # except Exception as e:
+                # print(f"Failed to evaluate idea {idea['Name']}: {str(e)}")
 
     print("All ideas evaluated.")
