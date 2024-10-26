@@ -331,7 +331,7 @@ if __name__ == "__main__":
 
             # Console logging every 100 steps
             if step_i % 100 == 0:
-                print(f"Step {step_i} | Loss: {loss.item():.4f} | Entropy: {entropy.mean().item():.4f}")
+                print(f"Step {step_i} | Loss: {loss.item():.4f} | Entropy: {entropy.mean().item():.4f} | Avg Reward: {avg_reward:.4f}")
     
     # End of training metrics
     total_time = time.time() - start_time
