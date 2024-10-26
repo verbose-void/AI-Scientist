@@ -1,0 +1,34 @@
+[
+    {
+        "Name": "adaptive_block_size",
+        "Title": "Adaptive Block Size: Dynamic Context Window Adjustment for Efficient Training",
+        "Experiment": "Modify the model to dynamically adjust its block size during training, starting with a smaller block size and gradually increasing it. This could potentially lead to faster initial training and better long-range dependency learning.",
+        "Interestingness": 6,
+        "Feasibility": 4,
+        "Novelty": 4
+    },
+    {
+        "Name": "layerwise_learning_rates",
+        "Title": "Layer-wise Learning Rate Adaptation: Optimizing Training Dynamics in Transformer Models",
+        "Experiment": "Implement layer-wise learning rates, where each transformer layer has its own learning rate. Modify the configure_optimizers function to assign different learning rates to different layers, with deeper layers having lower learning rates. Compare the training dynamics, convergence speed, and final performance with the baseline model.",
+        "Interestingness": 4,
+        "Feasibility": 6,
+        "Novelty": 2
+    },
+    {
+        "Name": "dynamic_dropout",
+        "Title": "Dynamic Dropout: Adaptive Regularization for Efficient Training in Transformer Models",
+        "Experiment": "Modify the training loop to adjust the dropout rate dynamically based on a linear or cosine decay schedule. Start with a higher dropout rate (e.g., 0.5) and decrease it gradually to a lower bound (e.g., 0.1) as the iteration number increases. Implement this by introducing a dropout_rate_schedule function that updates the dropout rate at each iteration. Compare the training dynamics, convergence speed, and final performance with the baseline model.",
+        "Interestingness": 7,
+        "Feasibility": 6,
+        "Novelty": 5
+    },
+    {
+        "Name": "adaptive_token_embeddings",
+        "Title": "Adaptive Token Embeddings: Dynamic Adjustment Based on Token Frequency",
+        "Experiment": "Implement a sliding window mechanism to track token frequency during training by maintaining a moving average of token frequencies. Modify the embedding layer to adjust the magnitudes of token embeddings dynamically based on their usage frequency, using a scaling factor (e.g., embedding_scale = log(frequency + 1)). Ensure the model retains information from rare tokens. Compare training dynamics, convergence speed, final performance, and rare token handling with the baseline model.",
+        "Interestingness": 8,
+        "Feasibility": 6,
+        "Novelty": 7
+    }
+]
