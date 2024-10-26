@@ -310,18 +310,20 @@ if __name__ == "__main__":
         max_num_generations=args.num_ideas,
         num_reflections=NUM_REFLECTIONS,
     )
-    ideas = check_idea_novelty(
-        ideas,
-        base_dir=base_dir,
-        client=client,
-        model=client_model,
-    )
+
+    # ideas = check_idea_novelty(
+    #     ideas,
+    #     base_dir=base_dir,
+    #     client=client,
+    #     model=client_model,
+    # )
 
     with open(osp.join(base_dir, "ideas.json"), "w") as f:
         json.dump(ideas, f, indent=4)
 
-    novel_ideas = [idea for idea in ideas if idea["novel"]]
+    # novel_ideas = [idea for idea in ideas if idea["novel"]]
     # novel_ideas = list(reversed(novel_ideas))
+    novel_ideas = ideas  # HACK: skip novelty checks (broken)
 
     if args.parallel > 0:
         print(f"Running {args.parallel} parallel processes")

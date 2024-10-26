@@ -11,7 +11,8 @@ learning_rate = 0.01
 gamma = 0.99
 episodes = 1000
 max_timesteps = 500
-seeds = [0, 1, 2, 3, 4, 5, 6, 7]
+# seeds = [0, 1, 2, 3, 4, 5, 6, 7]
+seeds = list(range(1))
 
 # Policy network (linear policy)
 class Policy(nn.Module):
