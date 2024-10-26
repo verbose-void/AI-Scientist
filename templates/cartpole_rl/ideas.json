@@ -17,18 +17,18 @@
     },
     {
         "Name": "entropy_regularization",
-        "Title": "Entropy Regularization: Encouraging Exploration for Accelerated Convergence",
-        "Experiment": "Modify the loss function to include an entropy regularization term. The entropy of the action distribution can be computed and added to the loss with a scaling factor that decays over time. Implement this by updating the `reinforce` function to calculate the entropy as `entropy = -dist.entropy().mean()`, and include it in the loss as `loss = -torch.stack(log_probs) * discounted_rewards + beta * entropy`, where `beta` is the entropy weight that decays over episodes. Adjust the `optimizer.step()` to account for this new loss definition.",
+        "Title": "Entropy Regularization: Balancing Exploration and Exploitation for Improved Convergence",
+        "Experiment": "Introduce an entropy regularization term into the policy loss function to encourage exploration. Gradually decay the entropy weight over time to shift from exploration to exploitation. Modify the reinforce function to include entropy calculation and integrate it into the loss computation.",
+        "Interestingness": 6,
+        "Feasibility": 8,
+        "Novelty": 5
+    },
+    {
+        "Name": "advantage_baseline",
+        "Title": "Advantage Baseline: Reducing Variance for Faster Convergence in Policy Gradient Methods",
+        "Experiment": "Implement a value network as a baseline for the policy gradient. Modify the reinforce function to include the value network, compute the advantage by subtracting the value estimates from the returns, and add a loss term for training the value network. Track the convergence speed and compare it to the original implementation.",
         "Interestingness": 7,
         "Feasibility": 8,
         "Novelty": 6
-    },
-    {
-        "Name": "advantage_function",
-        "Title": "Advantage Function: Reducing Variance in Policy Gradient Estimates",
-        "Experiment": "Enhance the REINFORCE algorithm by incorporating an advantage function. Introduce a value network to predict state values and use these predictions as baselines. Update the policy network using the advantage (discounted rewards minus predicted state values). Train the value network using mean squared error loss between predicted values and actual discounted rewards. Modify the `reinforce` function to include this new approach.",
-        "Interestingness": 8,
-        "Feasibility": 8,
-        "Novelty": 7
     }
 ]
