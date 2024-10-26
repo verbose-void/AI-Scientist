@@ -14,9 +14,12 @@ learning_rate = 1e-4
 max_steps = 10_000
 num_envs = 16
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 class Agent(nn.Module):
-    def __init__(self, obs_shape, num_actions):
+    def __init__(self, obs_shape, num_actions, device=device):
         super(Agent, self).__init__()
+        self.device = device  # Set the device attribute
         self.conv_layers = nn.Sequential(
             nn.LayerNorm(obs_shape),
             nn.Conv2d(in_channels=3, out_channels=64, kernel_size=7, stride=3),
@@ -35,7 +38,7 @@ class Agent(nn.Module):
         )
 
     def forward(self, x):
-        x = x.float().permute(0, 3, 1, 2)  # Ensure channel-first format
+        x = x.float().permute(0, 3, 1, 2).to(self.device)  # Ensure channel-first format and move to device
         x = self.conv_layers(x)
         x = x.mean(dim=(2, 3))  # Average pooling across spatial dimensions
         return self.fc(x)
@@ -47,7 +50,7 @@ def track_rewards(out_dir, seed):
     # envs = [VizDoomCustom() for _ in range(num_envs)]
     envs = [gym.make("VizdoomCorridor-v0") for _ in range(num_envs)]
     action_space = envs[0].action_space.n
-    agent = Agent(envs[0].observation_space['screen'].shape, action_space).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+    agent = Agent((3, 240, 320), action_space).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
     optimizer = optim.Adam(agent.parameters(), lr=learning_rate)
 
     cumulative_rewards = np.zeros(num_envs)
