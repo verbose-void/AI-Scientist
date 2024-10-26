@@ -1,6 +1,3 @@
-from interactor import DoomInteractor
-from video import VideoTensorStorage
-
 import torch
 from torch import nn
 
@@ -12,6 +9,119 @@ import csv
 
 import torch
 import torch.nn as nn
+import torch
+import numpy as np
+import gymnasium
+from gymnasium.vector.utils import batch_space
+from vizdoom import gymnasium_wrapper
+import json
+import time
+
+# from gymnasium.envs.registration import register
+
+
+# register(
+#     id="VizdoomOblige-v0",
+#     entry_point="vizdoom.gymnasium_wrapper.gymnasium_env_defns:VizdoomScenarioEnv",
+#     kwargs={"scenario_file": "oblige.cfg"},
+# )
+
+
+DISPLAY_SIZE = (1280, 720)
+
+
+class VizDoomVectorized:
+    def __init__(self, num_envs: int):
+        self.num_envs = num_envs
+        self.envs = [gymnasium.make("VizdoomCorridor-v0") for _ in range(num_envs)]
+        self.dones = [False] * num_envs
+
+        # Pre-allocate observation and reward tensors
+        first_obs_space = self.envs[0].observation_space['screen']
+        self.obs_shape = first_obs_space.shape
+        self.observations = torch.zeros((num_envs, *self.obs_shape), dtype=torch.uint8)
+        self.rewards = torch.zeros(num_envs, dtype=torch.float32)
+        self.dones_tensor = torch.zeros(num_envs, dtype=torch.bool)
+
+    def reset(self):
+        for i in range(self.num_envs):
+            obs, _ = self.envs[i].reset()
+            self.observations[i] = torch.tensor(obs["screen"], dtype=torch.uint8)  # Fill the pre-allocated tensor
+            self.dones[i] = False
+        return self.observations
+
+    def step(self, actions):
+        """Steps all environments in parallel and fills pre-allocated tensors for observations, rewards, and dones.
+           If an environment is done, it will automatically reset.
+        """
+        for i in range(self.num_envs):
+            if self.dones[i]:
+                # Reset the environment if it was done in the last step
+                obs, _ = self.envs[i].reset()
+                self.observations[i] = torch.tensor(obs["screen"], dtype=torch.uint8)  # Fill the pre-allocated tensor
+                self.rewards[i] = 0  # No reward on reset
+                self.dones_tensor[i] = False
+                self.dones[i] = False
+            else:
+                obs, reward, terminated, truncated, _ = self.envs[i].step(actions[i])
+                self.observations[i] = torch.tensor(obs["screen"], dtype=torch.uint8)  # Fill the pre-allocated tensor
+                self.rewards[i] = reward
+                done = terminated or truncated
+                self.dones_tensor[i] = done
+                self.dones[i] = done
+
+        return self.observations, self.rewards, self.dones_tensor
+
+    def close(self):
+        for env in self.envs:
+            env.close()
+
+class DoomInteractor:
+    """This thing manages the state of the environment and uses the agent
+    to infer and step on the environment. This way is a bit easier
+    because we can have environment mp while relying on the agent's
+    internal vectorization, making gradients easier to accumulate.
+    """
+
+    def __init__(self, num_envs: int, watch: bool = False):
+        self.num_envs = num_envs
+        self.env = VizDoomVectorized(num_envs)  # Using the vectorized environment
+        self.action_space = batch_space(self.env.envs[0].action_space, self.num_envs)
+        self.watch = watch  # If True, OpenCV window will display frames from env 0
+
+        # OpenCV window for visualization
+        if self.watch:
+            cv2.namedWindow("screen", cv2.WINDOW_NORMAL)
+            cv2.resizeWindow("screen", *DISPLAY_SIZE)
+
+    def reset(self):
+        return self.env.reset()
+
+    def step(self, actions=None):
+        if actions is None:
+            actions = np.array([self.env.envs[i].action_space.sample() for i in range(self.num_envs)])
+
+        # Step the environments with the sampled actions
+        observations, rewards, dones = self.env.step(actions)
+
+        # Show the screen from the 0th environment if watch is enabled
+        if self.watch:
+            # Convert tensor to numpy array for OpenCV display
+            screen = observations[0].cpu().numpy()
+            screen = cv2.resize(screen, DISPLAY_SIZE)
+
+            cv2.imshow("screen", screen)
+            cv2.waitKey(1)  # Display for 1 ms
+
+        # Return the results
+        return observations, rewards, dones
+
+    def close(self):
+        if self.watch:
+            cv2.destroyAllWindows()  # Close the OpenCV window
+        self.env.close()
+
+
 
 class Agent(torch.nn.Module):
     def __init__(self):
@@ -143,88 +253,94 @@ def timestamp_name():
 
 
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
+    # Set up directories and seeding
+    out_dir = "run_0"
+    os.makedirs(out_dir, exist_ok=True)
+    seed = 0
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+    # Set up device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    agent = Agent()
-    agent = agent.to(device)
-
-    VSTEPS = 10_000_000
+    # Initialize agent and environment
+    agent = Agent().to(device)
+    VSTEPS = 10_000
     NUM_ENVS = 48
     GRID_SIZE = int(np.ceil(np.sqrt(NUM_ENVS)))  # Dynamically determine the grid size
     LR = 1e-4
-
     NORM_WITH_REWARD_COUNTER = False
-
-    WATCH = False  # pop up display with live video frames
+    WATCH = False  # Show live video frames
 
     interactor = DoomInteractor(NUM_ENVS, watch=WATCH)
-
-    # Reset all environments
     observations = interactor.reset()
 
+    # Initialize metrics and counters
     cumulative_rewards = torch.zeros((NUM_ENVS,))
     step_counters = torch.zeros((NUM_ENVS,), dtype=torch.float32)
-
     optimizer = torch.optim.Adam(agent.parameters(), lr=LR)
 
     best_episode_cumulative_reward = -float("inf")
-    best_episode_env = None
-    best_episode = None
+    start_time = time.time()
 
-    # Example of stepping through the environments
-    for step_i in range(VSTEPS):
-        optimizer.zero_grad()
+    # Open CSV file for logging
+    csv_file_path = os.path.join(out_dir, "instantaneous_rewards.csv")
+    with open(csv_file_path, mode="w", newline="") as csv_file:
+        csv_writer = csv.writer(csv_file)
+        csv_writer.writerow(["Step", "Average Reward"])
 
-        actions, dist = agent.forward(observations.float().to(device))
+        # Training loop
+        for step_i in range(VSTEPS):
+            optimizer.zero_grad()
 
-        assert actions.shape == (NUM_ENVS,)
+            # Forward pass and environment step
+            actions, dist = agent.forward(observations.float().to(device))
+            entropy = dist.entropy()
+            log_probs = dist.log_prob(actions)
+            observations, rewards, dones = interactor.step(actions.cpu().numpy())
 
-        entropy = dist.entropy()
-        log_probs = dist.log_prob(actions)
+            # Update cumulative rewards and step counters
+            cumulative_rewards += rewards
+            step_counters += 1
+            step_counters *= 1 - dones.float()
 
-        observations, rewards, dones = interactor.step(actions.cpu().numpy())
-        cumulative_rewards += rewards
+            # Reset environments and agent hidden states as necessary
+            agent.reset(dones)
 
-        episodic_rewards = []
-        for i, done in enumerate(dones):
-            if done:
-                episodic_rewards.append(cumulative_rewards[i].item())
+            # Normalize rewards if required
+            if NORM_WITH_REWARD_COUNTER:
+                norm_rewards = cumulative_rewards / (step_counters + 1)
+            else:
+                norm_rewards = rewards
 
-                if cumulative_rewards[i].item() > best_episode_cumulative_reward:
-                    best_episode_cumulative_reward = cumulative_rewards[i].item()
-                    best_episode_env = i  # Track which environment achieved the best reward
+            # Calculate average reward for logging
+            avg_reward = rewards.mean().item()
 
-        episodic_rewards = torch.tensor(episodic_rewards)
+            # Log average reward to CSV
+            csv_writer.writerow([step_i, avg_reward])
 
-        # Reset cumulative rewards if done
-        cumulative_rewards *= 1 - dones.float()
+            # Loss calculation and optimization
+            loss = (-log_probs * norm_rewards.to(device)).mean()
+            loss.backward()
+            optimizer.step()
 
-        # count the number of steps taken (reset if done)
-        step_counters += 1
-        step_counters *= 1 - dones.float()
+            # Console logging every 100 steps
+            if step_i % 100 == 0:
+                print(f"Step {step_i} | Loss: {loss.item():.4f} | Entropy: {entropy.mean().item():.4f}")
+    
+    # End of training metrics
+    total_time = time.time() - start_time
+    experiment_info = {
+        "best_episode_cumulative_reward": best_episode_cumulative_reward,
+        "total_time_seconds": total_time,
+    }
+    
+    # Save final metrics to a JSON file
+    with open(os.path.join(out_dir, "final_info.json"), "w") as f:
+        json.dump(experiment_info, f, indent=4)
 
-        # call agent.reset with done flags for hidden state resetting
-        agent.reset(dones)
-
-        logging_cumulative_rewards = cumulative_rewards.clone()
-
-        if NORM_WITH_REWARD_COUNTER:
-            cumulative_rewards /= step_counters + 1
-
-        norm_rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-8)
-
-        loss = (-log_probs * norm_rewards.to(device)).mean()
-
-        loss.backward()
-        optimizer.step()
-
-        print(f"------------- {step_i} -------------")
-        print(f"Loss:\t\t{loss.item():.4f}")
-        print(f"Entropy:\t{entropy.mean().item():.4f}")
-        print(f"Log Prob:\t{log_probs.mean().item():.4f}")
-        print(f"Reward:\t\t{rewards.mean().item():.4f}")
-
-    # Close all environments
-    interactor.env.close()
+    print("Training complete.")
+    print(f"Total time: {experiment_info['total_time_seconds']} seconds")
+    print(f"Best episode cumulative reward: {experiment_info['best_episode_cumulative_reward']}")
