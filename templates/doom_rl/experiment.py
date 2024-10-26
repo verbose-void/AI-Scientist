@@ -47,19 +47,28 @@ def track_rewards(out_dir, seed):
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-    # envs = [VizDoomCustom() for _ in range(num_envs)]
     envs = [gym.make("VizdoomCorridor-v0") for _ in range(num_envs)]
     action_space = envs[0].action_space.n
-    agent = Agent((3, 240, 320), action_space).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+    agent = Agent((3, 240, 320), action_space, device=device).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=learning_rate)
 
     cumulative_rewards = np.zeros(num_envs)
     total_rewards = []
 
-    obs = np.array([env.reset()[0]["screen"] for env in envs])
+    # Initialize obs with valid numeric data
+    obs = []
+    for env in envs:
+        initial_obs = env.reset()[0].get("screen")
+        if initial_obs is not None and isinstance(initial_obs, np.ndarray):
+            obs.append(initial_obs)
+        else:
+            obs.append(np.zeros((240, 320, 3), dtype=np.float32))  # Default fallback
 
     for step in range(max_steps):
+        # Stack observations after ensuring they're all numeric arrays
+        obs = np.array([o if isinstance(o, np.ndarray) else np.zeros((240, 320, 3), dtype=np.float32) for o in obs])
         obs_tensor = torch.tensor(obs, dtype=torch.float32).to(agent.device)
+        
         action_probs = agent(obs_tensor)
         actions = [torch.multinomial(action_probs[i], 1).item() for i in range(num_envs)]
 
@@ -70,7 +79,12 @@ def track_rewards(out_dir, seed):
             if terminated or truncated:
                 total_rewards.append(cumulative_rewards[i])
                 cumulative_rewards[i] = 0
-                obs = env.reset()[0]["screen"]
+                obs = env.reset()[0].get("screen", np.zeros((240, 320, 3), dtype=np.float32))
+            
+            # Check each obs and replace with zeros if it's None or invalid
+            if obs is None or not isinstance(obs, np.ndarray):
+                obs = np.zeros((240, 320, 3), dtype=np.float32)
+                
             next_obs.append(obs)
             rewards.append(reward)
             dones.append(terminated or truncated)
@@ -82,14 +96,14 @@ def track_rewards(out_dir, seed):
         loss.backward()
         optimizer.step()
 
-        obs = np.array(next_obs)
+        obs = next_obs
 
         if step % 100 == 0 or step == max_steps - 1:
-            print(f"Step {step}/{max_steps}, Mean Reward: {np.mean(total_rewards)}")
+            print(f"Step {step}/{max_steps}, Mean Reward: {np.mean(total_rewards) if total_rewards else 0}")
 
     [env.close() for env in envs]
     np.save(os.path.join(out_dir, f"rewards_seed_{seed}.npy"), np.array(total_rewards))
-    return np.mean(total_rewards)
+    return np.mean(total_rewards) if total_rewards else 0
 
 if __name__ == "__main__":
     import argparse

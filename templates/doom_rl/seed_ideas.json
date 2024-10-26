@@ -1,0 +1,18 @@
+[
+  {
+    "Name": "learning_rate_decay",
+    "Title": "Learning Rate Decay: Gradual Reduction for Improved Convergence",
+    "Experiment": "Apply a learning rate decay schedule, gradually decreasing the learning rate over time. This approach could help the model avoid overshooting minima and improve convergence as training progresses.",
+    "Interestingness": 3,
+    "Feasibility": 8,
+    "Novelty": 3
+  },
+  {
+    "Name": "batch_normalization",
+    "Title": "Batch Normalization: Improved Stability and Training Speed",
+    "Experiment": "Introduce batch normalization layers to stabilize training and potentially reduce the number of training epochs needed. Observe whether the model achieves similar performance with fewer updates and assess any gains in overall efficiency.",
+    "Interestingness": 5,
+    "Feasibility": 7,
+    "Novelty": 4
+  }
+]
