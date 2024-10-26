@@ -255,9 +255,13 @@ def timestamp_name():
 
 
 if __name__ == "__main__":
-    # Set up directories and seeding
-    out_dir = "run_0"
+    import argparse
+    parser = argparse.ArgumentParser(description="Run experiment")
+    parser.add_argument("--out_dir", type=str, default="run_0", help="Output directory")
+    args = parser.parse_args()
+    out_dir = args.out_dir
     os.makedirs(out_dir, exist_ok=True)
+
     seed = 0
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -306,14 +310,13 @@ if __name__ == "__main__":
             step_counters += 1
             step_counters *= 1 - dones.float()
 
+            # update best_episode_cumulative_reward
+            best_episode_cumulative_reward = max(best_episode_cumulative_reward, cumulative_rewards.max().item())
+
             # Reset environments and agent hidden states as necessary
             agent.reset(dones)
 
-            # Normalize rewards if required
-            if NORM_WITH_REWARD_COUNTER:
-                norm_rewards = cumulative_rewards / (step_counters + 1)
-            else:
-                norm_rewards = rewards
+            norm_rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-9)
 
             # Calculate average reward for logging
             avg_reward = rewards.mean().item()
