@@ -1,4 +1,4 @@
 {
     "system": "You are an ambitious AI researcher who is looking to publish a paper that will contribute significantly to the field.",
-    "task_description": "Please find a way to improve the performance of CartPole by improving on the REINFORCE algorithm to speed up convergence."
+    "task_description": "Please find a way to improve the performance of Doom Corridor within 10k VSTEPS by improving on the REINFORCE algorithm to increase the average rewards to ideally optimal policy in the same amount of train time."
 }

@@ -1,34 +1,19 @@
 [
     {
-        "Name": "learning_rate_decay",
-        "Title": "Learning Rate Decay: Gradual Reduction for Improved Convergence",
-        "Experiment": "Apply a learning rate decay schedule, gradually decreasing the learning rate over time. This approach could help the model avoid overshooting minima and improve convergence as training progresses.",
-        "Interestingness": 3,
-        "Feasibility": 8,
-        "Novelty": 3
+      "Name": "tweak_loss_function",
+      "Title": "Improving Reinforce Loss: Improving Player High-Reward Policy Consistency in Doom",
+      "Experiment": "Modify the REINFORCE loss function to prioritize high-reward actions. This could involve adjusting the reward using symlog or coming up with other ways to activate rewards.",
+      "Interestingness": 8,
+      "Feasibility": 4,
+      "Novelty": 5
     },
     {
-        "Name": "batch_normalization",
-        "Title": "Batch Normalization: Improved Stability and Training Speed",
-        "Experiment": "Introduce batch normalization layers to stabilize training and potentially reduce the number of training epochs needed. Observe whether the model achieves similar performance with fewer updates and assess any gains in overall efficiency.",
-        "Interestingness": 5,
-        "Feasibility": 7,
-        "Novelty": 4
-    },
-    {
-        "Name": "entropy_regularization",
-        "Title": "Entropy Regularization: Balancing Exploration and Exploitation for Improved Convergence",
-        "Experiment": "Introduce an entropy regularization term into the policy loss function to encourage exploration. Gradually decay the entropy weight over time to shift from exploration to exploitation. Modify the reinforce function to include entropy calculation and integrate it into the loss computation.",
-        "Interestingness": 6,
-        "Feasibility": 8,
-        "Novelty": 5
-    },
-    {
-        "Name": "advantage_baseline",
-        "Title": "Advantage Baseline: Reducing Variance for Faster Convergence in Policy Gradient Methods",
-        "Experiment": "Implement a value network as a baseline for the policy gradient. Modify the reinforce function to include the value network, compute the advantage by subtracting the value estimates from the returns, and add a loss term for training the value network. Track the convergence speed and compare it to the original implementation.",
-        "Interestingness": 7,
-        "Feasibility": 8,
-        "Novelty": 6
+      "Name": "reward_normalization_stat_tracking",
+      "Title": "Reward Normalization Normalization: Using a running average to normalize rewards",
+      "Experiment": "Instead of doing instantaneous batch normalization, use a running average of rewards to normalize the rewards. This could help the model learn better and faster.",
+      "Interestingness": 5,
+      "Feasibility": 6,
+      "Novelty": 2
     }
-]
+  ]
+  
