@@ -8,21 +8,31 @@ def plot_rewards(out_dir):
     csv_file_path = os.path.join(out_dir, "instantaneous_rewards.csv")
     data = pd.read_csv(csv_file_path)
 
-    plt.figure(figsize=(10, 6))
+    # Calculate a rolling mean and standard deviation
+    window_size = 80  # Adjust this window size based on the data variance
+    data["Rolling Mean"] = data["Average Reward"].rolling(window=window_size).mean()
+    data["Rolling Std"] = data["Average Reward"].rolling(window=window_size).std()
 
-    # Plot the average reward per step
-    plt.plot(data["Step"], data["Average Reward"], label="Average Reward per Step")
+    plt.figure(figsize=(10, 4))  # Adjusted figure size for a thinner plot
+
+    # Plot the rolling mean with a shaded region for variance
+    plt.plot(data["Step"], data["Rolling Mean"], color="blue", linewidth=1.5)
+    plt.fill_between(
+        data["Step"],
+        data["Rolling Mean"] - data["Rolling Std"],
+        data["Rolling Mean"] + data["Rolling Std"],
+        color="blue",
+        alpha=0.2,
+    )
 
     # Plot settings
     plt.xlabel("Step")
     plt.ylabel("Average Reward")
     plt.title("Average Reward per Step over Time")
-    plt.legend()
     plt.grid(True)
     plt.tight_layout()
 
     # Show or save the plot
-    # plt.show()
     plt.savefig("rewards_plot.png")
 
 if __name__ == "__main__":

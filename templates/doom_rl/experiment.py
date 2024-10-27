@@ -336,8 +336,8 @@ if __name__ == "__main__":
     # End of training metrics
     total_time = time.time() - start_time
     experiment_info = {
-        "best_episode_cumulative_reward": best_episode_cumulative_reward,
-        "total_time_seconds": total_time,
+        "best_episode_cumulative_reward": {"means": best_episode_cumulative_reward},
+        "total_time_seconds": {"means": total_time},
     }
     
     # Save final metrics to a JSON file
@@ -345,5 +345,5 @@ if __name__ == "__main__":
         json.dump(experiment_info, f, indent=4)
 
     print("Training complete.")
-    print(f"Total time: {experiment_info['total_time_seconds']} seconds")
-    print(f"Best episode cumulative reward: {experiment_info['best_episode_cumulative_reward']}")
+    print(f"Total time: {experiment_info['total_time_seconds']['means']} seconds")
+    print(f"Best episode cumulative reward: {experiment_info['best_episode_cumulative_reward']['means']}")

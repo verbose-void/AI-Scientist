@@ -1,19 +1,34 @@
 [
     {
-      "Name": "tweak_loss_function",
-      "Title": "Improving Reinforce Loss: Improving Player High-Reward Policy Consistency in Doom",
-      "Experiment": "Modify the REINFORCE loss function to prioritize high-reward actions. This could involve adjusting the reward using symlog or coming up with other ways to activate rewards.",
-      "Interestingness": 8,
-      "Feasibility": 4,
-      "Novelty": 5
+        "Name": "tweak_loss_function",
+        "Title": "Improving Reinforce Loss: Improving Player High-Reward Policy Consistency in Doom",
+        "Experiment": "Modify the REINFORCE loss function to prioritize high-reward actions. This could involve adjusting the reward using symlog or coming up with other ways to activate rewards.",
+        "Interestingness": 8,
+        "Feasibility": 4,
+        "Novelty": 5
     },
     {
-      "Name": "reward_normalization_stat_tracking",
-      "Title": "Reward Normalization Normalization: Using a running average to normalize rewards",
-      "Experiment": "Instead of doing instantaneous batch normalization, use a running average of rewards to normalize the rewards. This could help the model learn better and faster.",
-      "Interestingness": 5,
-      "Feasibility": 6,
-      "Novelty": 2
+        "Name": "reward_normalization_stat_tracking",
+        "Title": "Reward Normalization Normalization: Using a running average to normalize rewards",
+        "Experiment": "Instead of doing instantaneous batch normalization, use a running average of rewards to normalize the rewards. This could help the model learn better and faster.",
+        "Interestingness": 5,
+        "Feasibility": 6,
+        "Novelty": 2
+    },
+    {
+        "Name": "pixel_control",
+        "Title": "Enhancing Policy Learning with Pixel Control Auxiliary Task in Doom Corridor",
+        "Experiment": "Modify the agent to include an additional output head for pixel control. Implement a pixel control task that predicts changes in pixel values for specific regions of the screen (e.g., center and corners). Calculate the pixel control loss using mean squared error between predicted and actual pixel changes. Combine this loss with the primary Reinforce loss using a weighted sum. Evaluate the performance improvement in terms of average rewards within 10k VSTEPS.",
+        "Interestingness": 9,
+        "Feasibility": 7,
+        "Novelty": 7
+    },
+    {
+        "Name": "actor_critic",
+        "Title": "Reducing Variance in REINFORCE with Actor-Critic Method in Doom Corridor",
+        "Experiment": "Add a value function network to the agent to predict the expected future rewards. Modify the loss function to include both the policy gradient loss (using the advantage estimate) and the value function loss. Implement this by adding a new head to the existing agent network for the value function prediction. The value function loss can be a mean squared error between the predicted values and the observed returns. Update the training loop to optimize both the policy and value function networks.",
+        "Interestingness": 9,
+        "Feasibility": 7,
+        "Novelty": 8
     }
 ]
-  
